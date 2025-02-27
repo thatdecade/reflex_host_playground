@@ -62,12 +62,18 @@ class ReflexController:
             return self.connect_pad(serial)
 
     def connect_pad(self, serial: str) -> bool:
+        """
+          1. After connecting, enter config mode
+          2. Request the profile (read)
+          3. Exit config mode upon receiving the profile reply.
+        """
         if pad := ReflexPadInstance(self._info, serial, self._model):
             if self._instance is None and serial in self._serials:
                 self._instance = pad
-                # Upon first connection, read the current device profile and update it.
-                device_profile = self.queue_read_profile()
-                ProfileController(self._model).update_device_profile(device_profile)
+                # Begin config sequence on connection:
+                self.send_enter_config()
+                self.queue_read_profile()
+                # Exit config will be handled upon receipt of the profile reply.
                 return self.CONNECTED
         return self.DISCONNECTED
 
@@ -146,17 +152,117 @@ class ReflexController:
         self.queue_read_profile()
         return True
 
-    def queue_read_profile(self) -> None:
-        """
-        Queues a read profile command (header 0xF1) to the device by writing
-        the appropriate packet to the HID write process.
-        The device is expected to reply with a profile read response.
-        """
+    def send_enter_config(self) -> None:
+        """Sends the 64-byte Enter Config Mode packet."""
         if self._instance is None:
             return
-        packet = bytearray(64)
-        packet[0] = 0xF1  # Profile read request header
+        packet = bytearray.fromhex(
+            "b6da3dc8904aae1587f7ee9913c8bc5f4e616d7b7505c4b36220c9a7841866d1872782b87caae1bf41c001c457d4e1e3d54b5db6a6c16768a615735f43c95ab3"
+        )
         with self._instance._write.data.get_lock():
             for i in range(64):
                 self._instance._write.data[i] = packet[i]
         self._instance._write.event.set()
+
+    def send_exit_config(self) -> None:
+        """Sends the 64-byte Exit Config Mode packet."""
+        if self._instance is None:
+            return
+        packet = bytearray.fromhex(
+            "7f5455b20d201105e64b9852cf4911475cefae3d39bde6baa12d69b14df3c61d71ffbc33091fd41034e545b0fae189dafc3a32dfe97a8dd6b7238b33bdd65ea6"
+        )
+        with self._instance._write.data.get_lock():
+            for i in range(64):
+                self._instance._write.data[i] = packet[i]
+        self._instance._write.event.set()
+
+    def queue_read_profile(self) -> None:
+        """Queues a Profile Read Request packet (0xF1)."""
+        if self._instance is None:
+            return
+        packet = bytearray(64)
+        packet[0] = 0xF1  # Read request header
+        with self._instance._write.data.get_lock():
+            for i in range(64):
+                self._instance._write.data[i] = packet[i]
+        self._instance._write.event.set()
+
+    def push_profile(self) -> bool:
+        """
+        Sequence for Push Profile:
+          1. Enter Config Mode
+          2. Send the Profile Push packet (header 0xF0)
+          3. Queue a Profile Read Request (to receive updated profile)
+          4. (Later, when the read reply is received, Exit Config Mode)
+        """
+        if self._instance is None:
+            return False
+
+        # 1. Enter Config Mode.
+        self.send_enter_config()
+
+        # 2. Prepare and send the Profile Push packet.
+        packet = bytearray(64)
+        packet[0] = 0xF0  # Profile Push command header
+        pos = 1
+        profile_data = self._model.profile_data  # Expected to be a dict mapping panel coords
+        for panel in PadModel.PANELS.coords:
+            panel_profile = profile_data.get(panel, ({}, ' '))
+            sensor_data = panel_profile[0]  # Dict of sensor data: {sensor_coord: (threshold, hysteresis)}
+            for sensor in PadModel.SENSORS.coords:
+                threshold, hysteresis = sensor_data.get(sensor, (30, 5))
+                packet[pos] = threshold & 0xFF
+                packet[pos + 1] = hysteresis & 0xFF
+                pos += 2
+        for panel in PadModel.PANELS.coords:
+            panel_profile = profile_data.get(panel, ({}, ' '))
+            key = panel_profile[1]
+            packet[pos] = ord(key[0]) if key else 0
+            pos += 1
+        for i in range(pos, 64):
+            packet[i] = 0  # Zero pad the remainder
+
+        with self._instance._write.data.get_lock():
+            for i in range(64):
+                self._instance._write.data[i] = packet[i]
+        self._instance._write.event.set()
+
+        # 3. Queue a Profile Read Request.
+        self.queue_read_profile()
+
+        # The Exit Config command will be sent after processing the profile reply.
+        return True
+
+    def process_read_profile_reply(self, data: bytearray) -> None:
+        """
+        Called when the device sends a Profile Read Reply.
+        Parses the reply, updates the in-memory (device) profile,
+        and then exits configuration mode.
+        Expected packet format (64 bytes):
+          - Byte 0: Header (0xF1)
+          - Bytes 1-32: Sensor thresholds and hysteresis (16 sensors × 2 bytes)
+          - Bytes 33-36: Assigned keys (1 byte per panel)
+          - Bytes 37-63: Not used
+        """
+        if not data or data[0] != 0xF1:
+            return  # Ignore unexpected packets
+
+        new_profile = {}
+        pos = 1
+        for panel in PadModel.PANELS.coords:
+            sensor_data = {}
+            for sensor in PadModel.SENSORS.coords:
+                threshold = data[pos]
+                hysteresis = data[pos + 1]
+                sensor_data[sensor] = (threshold, hysteresis)
+                pos += 2
+            key_val = chr(data[pos])
+            pos += 1
+            new_profile[panel] = (sensor_data, key_val)
+
+        # Update the in-memory device profile.
+        from profile_controller import ProfileController
+        ProfileController(self._model).update_device_profile(new_profile)
+
+        # 4. Exit Config Mode.
+        self.send_exit_config()
