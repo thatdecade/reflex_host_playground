@@ -68,13 +68,19 @@ Profile packets (Push, Request, and Reply) are only accepted by the device when 
 ### Enter Config Mode Packet
 
 - **Total Length:** 64 bytes  
-- **Definition:**  The host sends a 64-byte packet that must exactly equal the **Enter Config Magic Packet** (see below).  
+- **Definition:**  The app sends a 64-byte packet that must exactly equal:
+```
+  b6da3dc8904aae1587f7ee9913c8bc5f4e616d7b7505c4b36220c9a7841866d1872782b87caae1bf41c001c457d4e1e3d54b5db6a6c16768a615735f43c95ab3
+```
 - **Purpose:**  When the device receives this exact packet, it suspends normal LED and sensor data transmissions and enters configuration mode.
 
 ### Exit Config Mode Packet
 
 - **Total Length:** 64 bytes  
-- **Definition:**  The host sends a 64-byte packet that must exactly equal the **Exit Config Magic Packet** (see below).  
+- **Definition:**  The app sends a 64-byte packet that must exactly equal:
+```
+  7f5455b20d201105e64b9852cf4911475cefae3d39bde6baa12d69b14df3c61d71ffbc33091fd41034e545b0fae189dafc3a32dfe97a8dd6b7238b33bdd65ea6
+```
 - **Purpose:**  Upon receiving an exact match, the device exits configuration mode and resumes normal operation.
 
 ### Profile Push Packet
@@ -107,7 +113,7 @@ Profile packets (Push, Request, and Reply) are only accepted by the device when 
 
 ---
 
-#### Generating the Magic Signature
+### Generating the Magic Signature
 
 Using Python’s SHA-512, the magic signatures are computed as follows:
 
@@ -122,16 +128,5 @@ enter_config_magic = generate_config_magic_packet("REFLEXENTERCONFIG")
 exit_config_magic  = generate_config_magic_packet("REFLEXEXITCONFIG")
 ```
 
-These functions produce 64-byte packets:
-
-- **Enter Config Magic Packet:**  
-  ```
-  b6da3dc8904aae1587f7ee9913c8bc5f4e616d7b7505c4b36220c9a7841866d1872782b87caae1bf41c001c457d4e1e3d54b5db6a6c16768a615735f43c95ab3
-  ```
-- **Exit Config Magic Packet:**  
-  ```
-  7f5455b20d201105e64b9852cf4911475cefae3d39bde6baa12d69b14df3c61d71ffbc33091fd41034e545b0fae189dafc3a32dfe97a8dd6b7238b33bdd65ea6
-  ```
-  
 These signatures were compared to the pre-compiled LED packets in [preprocessed_led_packets.csv](preprocessed_led_packets.csv).
 Ensuring LED traffic will never conflict with config mode packets.
