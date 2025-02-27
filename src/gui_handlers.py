@@ -2,6 +2,7 @@ from connection_widget import ConnectionWidget
 from pad_model import PadEntry
 from pad_widget import PadWidget
 from profile_widget import ProfileWidget
+from PySide6 import QtWidgets
 
 
 class GUIHandlers:
@@ -83,3 +84,18 @@ class GUIHandlers:
 
     def sensor_updated(self) -> None:
         self._pad_widget.update_sensor_thresholds()
+
+    def profile_pushed(self, confirmation: bool) -> None:
+        if confirmation:
+             QtWidgets.QMessageBox.information(
+                 None, "Profile Push", "Profile pushed successfully to RE:Flex Device."
+             )
+             # Update the profile dropdown to include 'RE:Flex Device'
+             if "RE:Flex Device" not in [self._profile_widget._dropdown.itemText(i)
+                                          for i in range(self._profile_widget._dropdown.count())]:
+                 self._profile_widget.add_dropdown_item("RE:Flex Device")
+             self._profile_widget.set_dropdown_by_text("RE:Flex Device")
+        else:
+             QtWidgets.QMessageBox.critical(
+                 None, "Profile Push", "Failed to push profile to RE:Flex Device."
+             )

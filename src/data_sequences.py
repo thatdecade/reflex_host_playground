@@ -1,3 +1,4 @@
+# data_sequences.py
 from event_info import DataProcessMessage, WidgetMessage
 from pad_model import PadModel
 from profile_controller import ProfileController
@@ -54,7 +55,11 @@ class Sequences:
         ],
         WidgetMessage.VIEW_UPDATED: [
             pad_model.view_updated
-        ]
+        ],
+        WidgetMessage.PUSH_PROFILE: [
+            pad_controller.push_profile
+        ],
+        "DP_profile_read_reply": [lambda data: pad_controller.process_read_profile_reply(data)],
     }
 
     transmit = {
@@ -77,7 +82,9 @@ class Sequences:
         profile_controller.rename_user_profile:
             DataProcessMessage.PROFILE_RENAMED,
         profile_controller.save_user_profile:
-            DataProcessMessage.PROFILE_SAVED
+            DataProcessMessage.PROFILE_SAVED,
+        pad_controller.push_profile: 
+            DataProcessMessage.PROFILE_PUSHED,
     }
 
     def handle_pad_data(self) -> bool:

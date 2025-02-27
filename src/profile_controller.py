@@ -114,3 +114,13 @@ class ProfileController:
 
     def get_saved_data(self) -> dict:
         return self._saved_data
+
+    def update_device_profile(self, device_profile: dict) -> None:
+        """
+        Updates the in-memory "RE:Flex Device" profile with the provided profile_data.
+        This does not write to disk but simply updates the model.
+        """
+        device_name = "RE:Flex Device"
+        self._model.profile_data = device_profile
+        self._saved_data = device_profile
+        # TBD, signal the GUI to update the profile dropdown to include "RE:Flex Device".

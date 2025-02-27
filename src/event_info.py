@@ -1,6 +1,7 @@
+# event_info.py
+
 class WidgetMessage:
     """Message string to pass over queue from Widget event to Data process."""
-
     REFRESH = "GUI_refresh_pads"
     CONNECT = "GUI_connect_pad"
     NEW = "GUI_new_profile"
@@ -14,11 +15,10 @@ class WidgetMessage:
     SENSOR_UPDATE = "GUI_sensor_update"
     VIEW_UPDATED = "GUI_view_updated"
     KEYS = "GUI_keys"
-
+    PUSH_PROFILE = "GUI_push_profile"
 
 class DataProcessMessage:
     """Message string to pass over queue from Data process event to Widget."""
-
     ALL_PADS = "DP_all_pads"
     PROFILE_NAMES = "DP_profile_init"
     PAD_CONNECTED = "DP_pad_connected"
@@ -29,3 +29,4 @@ class DataProcessMessage:
     PROFILE_RENAMED = "DP_profile_renamed"
     PROFILE_REMOVED = "DP_profile_removed"
     SENSOR_UPDATED = "DP_sensor_updated"
+    PROFILE_PUSHED = "DP_profile_pushed"

@@ -1,3 +1,4 @@
+# profile_widget.py
 import PySide6.QtCore as QtCore
 import PySide6.QtGui as QtGui
 import PySide6.QtWidgets as QtWidgets
@@ -72,12 +73,13 @@ class KeyEntryDialog(QtWidgets.QDialog):
 
 class ProfileWidget(QtWidgets.QWidget):
     """Widget to manage profile for a dance pad session."""
-
+    
     NEW_ICON = QtWidgets.QStyle.StandardPixmap.SP_FileDialogNewFolder
     SAVE_ICON = QtWidgets.QStyle.StandardPixmap.SP_DialogSaveButton
     REMOVE_ICON = QtWidgets.QStyle.StandardPixmap.SP_DialogDiscardButton
     RENAME_ICON = QtWidgets.QStyle.StandardPixmap.SP_FileDialogDetailedView
     KEYS_ICON = QtWidgets.QStyle.StandardPixmap.SP_FileDialogListView
+    PUSH_ICON = QtWidgets.QStyle.StandardPixmap.SP_ArrowForward
 
     LABEL_STR = "Profile:"
 
@@ -92,6 +94,7 @@ class ProfileWidget(QtWidgets.QWidget):
     SAVE_CLICKED = QtCore.Signal()
     DROPDOWN_ACTIVATED = QtCore.Signal(str)
     KEYS_CLICKED = QtCore.Signal()
+    PUSH_PROFILE_CLICKED = QtCore.Signal()
 
     def __init__(self):
         super(ProfileWidget, self).__init__()
@@ -102,7 +105,8 @@ class ProfileWidget(QtWidgets.QWidget):
         self._remove = self._create_tool_button(self.REMOVE_ICON)
         self._rename = self._create_tool_button(self.RENAME_ICON)
         self._keys = self._create_tool_button(self.KEYS_ICON)
-
+        self._push = self._create_tool_button(self.PUSH_ICON)
+        
         self._dropdown = QtWidgets.QComboBox()
         self._dropdown.setSizePolicy(self.DROP_H_POLICY, self.DROP_V_POLICY)
 
@@ -114,6 +118,7 @@ class ProfileWidget(QtWidgets.QWidget):
         layout.addWidget(self._save)
         layout.addWidget(self._remove)
         layout.addWidget(self._keys)
+        layout.addWidget(self._push)
         layout.setContentsMargins(*self.LAYOUT_PADDING)
         self.setLayout(layout)
 
@@ -123,6 +128,7 @@ class ProfileWidget(QtWidgets.QWidget):
         self._rename.clicked.connect(self.RENAME_CLICKED.emit)
         self._dropdown.activated.connect(self.DROPDOWN_ACTIVATED.emit)
         self._keys.clicked.connect(self.KEYS_CLICKED.emit)
+        self._push.clicked.connect(self.PUSH_PROFILE_CLICKED.emit)
 
     def _create_tool_button(
         self, icon: QtWidgets.QStyle.StandardPixmap

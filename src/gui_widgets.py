@@ -1,3 +1,4 @@
+# gui_widgets.py
 import PySide6.QtCore as QtCore
 import PySide6.QtWidgets as QtWidgets
 
@@ -23,10 +24,10 @@ class DataReceiveSignaller(QtWidgets.QWidget):
     PROFILE_SAVED = QtCore.Signal(bool)
     SENSOR_UPDATED = QtCore.Signal(bool)
     KEYS_UPDATED = QtCore.Signal()
+    PROFILE_PUSHED = QtCore.Signal(bool)
 
     def __init__(self):
         super(DataReceiveSignaller, self).__init__()
-
 
 class Widgets:
     def __init__(self):
@@ -49,7 +50,8 @@ class Widgets:
             self.profile_widget.REMOVE_CLICKED: WidgetMessage.REMOVE,
             self.profile_widget.RENAME_CLICKED: WidgetMessage.RENAME,
             self.profile_widget.SAVE_CLICKED: WidgetMessage.SAVE,
-            self.profile_widget.KEYS_CLICKED: WidgetMessage.KEYS
+            self.profile_widget.KEYS_CLICKED: WidgetMessage.KEYS,
+            self.profile_widget.PUSH_PROFILE_CLICKED: WidgetMessage.PUSH_PROFILE,
         }
 
         self.data_requests = {
@@ -68,7 +70,8 @@ class Widgets:
             WidgetMessage.SELECT: [self.profile_widget.get_pad_name],
             WidgetMessage.SENSOR_UPDATE: [self.pad_widget.get_update_data],
             WidgetMessage.VIEW_UPDATED: [],
-            WidgetMessage.KEYS: [self.profile_widget.get_keys]
+            WidgetMessage.KEYS: [self.profile_widget.get_keys],
+            WidgetMessage.PUSH_PROFILE: [],
         }
 
         self.process_requests = {
@@ -81,7 +84,8 @@ class Widgets:
             DataProcessMessage.PROFILE_REMOVED: self.signals.PROFILE_REMOVED,
             DataProcessMessage.PROFILE_RENAMED: self.signals.PROFILE_RENAMED,
             DataProcessMessage.PROFILE_SAVED: self.signals.PROFILE_SAVED,
-            DataProcessMessage.SENSOR_UPDATED: self.signals.SENSOR_UPDATED
+            DataProcessMessage.SENSOR_UPDATED: self.signals.SENSOR_UPDATED,
+            DataProcessMessage.PROFILE_PUSHED: self.signals.PROFILE_PUSHED,
         }
 
         self.signal_handlers = {
@@ -94,5 +98,6 @@ class Widgets:
             self.signals.PROFILE_REMOVED: self.handlers.profile_removed,
             self.signals.PROFILE_RENAMED: self.handlers.profile_renamed,
             self.signals.PROFILE_SAVED: self.handlers.profile_saved,
-            self.signals.SENSOR_UPDATED: self.handlers.sensor_updated
+            self.signals.SENSOR_UPDATED: self.handlers.sensor_updated,
+            self.signals.PROFILE_PUSHED: self.handlers.profile_pushed,
         }
